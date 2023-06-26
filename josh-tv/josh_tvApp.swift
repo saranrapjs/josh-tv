@@ -9,9 +9,12 @@ import SwiftUI
 
 @main
 struct josh_tvApp: App {
+    @StateObject private var viewModel = MediaItemsViewModel()
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(events: viewModel.events, onFile: {
+                viewModel.presentDialog()
+            }, plexDB: viewModel.plexDB)
         }
     }
 }
