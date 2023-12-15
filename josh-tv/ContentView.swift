@@ -113,7 +113,7 @@ struct EventView: View {
             Rectangle()
                 .fill(.purple)
                 .border(Color.white, width: 1)
-            Text(event.title)
+            Text(event.composedTitle())
                 .foregroundColor(.white)
                 .font(Font.custom("Trattatello", size: 16.0))
         }
@@ -125,7 +125,7 @@ struct EventView: View {
             }
         }
         .popover(isPresented: $isPopover) {
-            Text(event.title)
+            Text(event.composedTitle())
                 .font(Font.custom("Trattatello", size: 20.0))
                 .padding()
         }
@@ -164,6 +164,7 @@ struct EventView: View {
     
     
 }
+
 
 struct ContentView: View {
     let startDate = Date();
@@ -221,15 +222,15 @@ struct ContentView: View {
 struct ContentView_Previews: PreviewProvider {
     // Sample events
     static var events: [Event] = [
-        Event(title: "Burning", startHour: 0, startMinute: 0, endHour: 2, endMinute: 28, startDayIndex: 0, endDayIndex:0),
-        Event(title: "Last Exit to Brooklyn", startHour: 2, startMinute: 28, endHour: 4, endMinute: 10, startDayIndex: 0, endDayIndex:0),
-        Event(title: "Microbe and Gasoline", startHour: 4, startMinute: 10, endHour: 5, endMinute: 53, startDayIndex: 0, endDayIndex:0),
-        Event(title: "Milford Graves Full Mantis", startHour: 5, startMinute: 53, endHour: 7, endMinute: 24, startDayIndex: 0, endDayIndex:0),
-        Event(title: "Mystery Train", startHour: 7, startMinute: 24, endHour: 9, endMinute: 10, startDayIndex: 0, endDayIndex:0),
-        Event(title: "Pin", startHour: 9, startMinute: 10, endHour: 10, endMinute: 53, startDayIndex: 0, endDayIndex:0),
-        Event(title: "The Passionate Thief", startHour: 10, startMinute: 53, endHour: 12, endMinute: 39, startDayIndex: 0, endDayIndex:0),
-        Event(title: "Lover's Rock", startHour: 12, startMinute: 39, endHour: 14, endMinute: 14, startDayIndex: 0, endDayIndex:0),
-        Event(title: "To Live and Die in L.A.", startHour: 14, startMinute: 14, endHour: 2, endMinute: 45, startDayIndex: 0, endDayIndex:1)
+        Event(title: "Burning", seriesTitle: nil, startHour: 0, startMinute: 0, endHour: 2, endMinute: 28, startDayIndex: 0, endDayIndex:0),
+        Event(title: "Last Exit to Brooklyn", seriesTitle: nil, startHour: 2, startMinute: 28, endHour: 4, endMinute: 10, startDayIndex: 0, endDayIndex:0),
+        Event(title: "Microbe and Gasoline", seriesTitle: nil, startHour: 4, startMinute: 10, endHour: 5, endMinute: 53, startDayIndex: 0, endDayIndex:0),
+        Event(title: "Milford Graves Full Mantis", seriesTitle: nil, startHour: 5, startMinute: 53, endHour: 7, endMinute: 24, startDayIndex: 0, endDayIndex:0),
+        Event(title: "Mystery Train", seriesTitle: nil, startHour: 7, startMinute: 24, endHour: 9, endMinute: 10, startDayIndex: 0, endDayIndex:0),
+        Event(title: "Pin", seriesTitle: nil, startHour: 9, startMinute: 10, endHour: 10, endMinute: 53, startDayIndex: 0, endDayIndex:0),
+        Event(title: "The Passionate Thief", seriesTitle: nil, startHour: 10, startMinute: 53, endHour: 12, endMinute: 39, startDayIndex: 0, endDayIndex:0),
+        Event(title: "Lover's Rock", seriesTitle: nil, startHour: 12, startMinute: 39, endHour: 14, endMinute: 14, startDayIndex: 0, endDayIndex:0),
+        Event(title: "To Live and Die in L.A.", seriesTitle: nil, startHour: 14, startMinute: 14, endHour: 2, endMinute: 45, startDayIndex: 0, endDayIndex:1)
     ]
 
     static var previews: some View {

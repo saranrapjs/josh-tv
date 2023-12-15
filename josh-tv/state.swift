@@ -12,46 +12,33 @@ import SwiftUI
 struct Event: Identifiable, Equatable, Hashable {
     let id = UUID()
     let title: String
+    let seriesTitle: String?
     let startHour: Int
     let startMinute: Int
     let endHour: Int
     let endMinute: Int
     let startDayIndex: Int // Index of the day within the calendar
     let endDayIndex: Int // Index of the day within the calendar
+    
+    func composedTitle() -> String {
+        if let maybeTitle = seriesTitle {
+            return "\(maybeTitle): \(title)"
+        }
+
+        return title
+    }
 }
 
 struct MediaItem {
     let duration: TimeInterval
     let title: String
+    let seriesTitle: String?
 }
 
 struct RandomNumberGeneratorWithSeed: RandomNumberGenerator {
     init(seed: Int) { srand48(seed) }
     func next() -> UInt64 { return UInt64(drand48() * Double(UInt64.max)) }
 }
-
-// used to seed the random number generator predictably for a given week's window
-func previousSundayDate() -> Int {
-    let calendar = Calendar.current
-    let today = Date()
-    
-    // Find the current weekday (1 is Sunday, 2 is Monday, etc.)
-    let currentWeekday = calendar.component(.weekday, from: today)
-    
-    // Calculate the number of days to subtract to reach the previous Sunday
-    let daysToSubtract = (currentWeekday + 6) % 7
-    
-    // Subtract the days from the current date
-    let previousSunday = calendar.date(byAdding: .day, value: -daysToSubtract, to: today)!
-    
-    // Extract the date as an integer
-    let dateFormatter = DateFormatter()
-    dateFormatter.dateFormat = "yyyyMMdd"
-    let previousSundayDate = Int(dateFormatter.string(from: previousSunday))!
-    
-    return previousSundayDate
-}
-
 
 class MediaItemsViewModel: ObservableObject {
     @Published var plexDB: URL?
@@ -116,15 +103,21 @@ class MediaItemsViewModel: ObservableObject {
         
         var mediaItems: [MediaItem] = []
         
-        let query = "select title, duration from metadata_items where duration is not null and metadata_type != 12;"
+        let query = "select vid.title, vid.duration, series.title from metadata_items as vid left join metadata_items as season on season.id = vid.parent_id left join metadata_items as series on series.id = season.parent_id where vid.duration is not null and vid.metadata_type != 12;"
         var statement: OpaquePointer? = nil
         
         if sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK {
             while sqlite3_step(statement) == SQLITE_ROW {
                 let title = String(cString: sqlite3_column_text(statement, 0))
                 let milliseconds = sqlite3_column_int(statement, 1)
+                let seriesTitle: String?
+                if let cString = sqlite3_column_text(statement, 2) {
+                    seriesTitle = String(cString: cString)
+                } else {
+                    seriesTitle = nil
+                }
                 let duration = TimeInterval(Int(milliseconds) / 1000)
-                let mediaItem = MediaItem(duration: duration, title: title)
+                let mediaItem = MediaItem(duration: duration, title: title, seriesTitle: seriesTitle)
                 mediaItems.append(mediaItem)
             }
         } else {
@@ -148,7 +141,25 @@ class MediaItemsViewModel: ObservableObject {
     }
     
     static func createEvents(from mediaItems: [MediaItem]) -> [Event] {
-        var seededGenerator = RandomNumberGeneratorWithSeed(seed: previousSundayDate())
+
+        let calendar = Calendar.current
+        let today = Date()
+        
+        // Find the current weekday (1 is Sunday, 2 is Monday, etc.)
+        let currentWeekday = calendar.component(.weekday, from: today)
+        
+        // Calculate the number of days to subtract to reach the previous Sunday
+        let daysToSubtract = (currentWeekday + 6) % 7
+        
+        // Subtract the days from the current date
+        let sunday = calendar.date(byAdding: .day, value: -daysToSubtract, to: today)!
+
+        // Extract the date as an integer
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyyMMdd"
+        let seed = Int(dateFormatter.string(from: sunday))!
+        
+        var seededGenerator = RandomNumberGeneratorWithSeed(seed: seed)
 
         let shuffled = mediaItems.shuffled(using: &seededGenerator)
         
@@ -174,16 +185,21 @@ class MediaItemsViewModel: ObservableObject {
                 endHour %= 24
             }
             
-            let event = Event(title: mediaItem.title,
+            let event = Event(
+              title: mediaItem.title,
+              seriesTitle: mediaItem.seriesTitle,
               startHour: currentHour,
               startMinute: currentMinute,
               endHour: endHour,
               endMinute: endMinute,
-              startDayIndex: startDayIndex,
-              endDayIndex: currentDayIndex
+              startDayIndex: startDayIndex - daysToSubtract - 1,
+              endDayIndex: currentDayIndex - daysToSubtract - 1
             )
             
-            events.append(event)
+            if startDayIndex >= currentWeekday || currentDayIndex >= currentWeekday {
+                events.append(event)
+            }
+            
             
             // Update the current time and day for the next event
             currentHour = endHour
